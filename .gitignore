@@ -1,0 +1,27 @@
+# Secretos
+.env
+.env.*
+!.env.example
+
+# Dependencias
+node_modules/
+.venv/
+__pycache__/
+
+# Builds
+dist/
+build/
+*.tsbuildinfo
+
+# Tests y cobertura
+coverage/
+.pytest_cache/
+
+# Logs
+*.log
+npm-debug.log*
+
+# Editor y sistema operativo
+.DS_Store
+Thumbs.db
+.idea/
