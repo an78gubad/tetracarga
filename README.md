@@ -6,7 +6,8 @@ Proyecto del **AI-First Builders Lab 2026** (MUG).
 
 ## Estado
 
-En definición. El alcance está en [`docs/PRD-001.md`](docs/PRD-001.md).
+Feature central andando: descripción en castellano → lista de ítems → disposición validada en 3D,
+sobre un contenedor 20' fijo. El alcance completo está en [`PRD.md`](PRD.md).
 
 ## Cómo funciona
 
@@ -17,8 +18,16 @@ En definición. El alcance está en [`docs/PRD-001.md`](docs/PRD-001.md).
 
 ## Stack
 
-Sin definir todavía.
+TypeScript sobre Node 22, React con Vite, Three.js, Vitest. Acomodador y validador propios.
+DeepSeek detrás de una función serverless de Vercel.
 
 ## Desarrollo
 
-Sin definir todavía.
+```sh
+npm install
+cp .env.example .env   # y completar DEEPSEEK_API_KEY
+npm run dev            # la app y /api/interpretar en http://localhost:5173
+npm test               # sin red ni API key
+```
+
+En Vercel, `DEEPSEEK_API_KEY` se configura como variable de entorno del proyecto.
