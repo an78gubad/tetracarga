@@ -1,0 +1,199 @@
+Hola Andrés! Gracias por el envío: este es de los mejores PRD que recibí en los cursos que estoy dando! Justamente por eso te voy a apretar fuerte: Es demasiado. Tenés tres proyectos ahí adentro: extracción con lenguaje natural, bin packing 3D con restricciones (que vos mismo reconocés NP-duro) y un visor 3D navegable. Y encima RF-11, que es la estética Tetris completa con tipografía de píxeles, caída animada y recuadro NEXT, que se lleva dos AC propios. Eso es lo último que tiene que existir, no algo que planificás desde ahora. Poné el Tetris en un apartado de "si sobra tiempo" y quedate con el motor y el validador, que es donde está el valor (al menos para este curso).
+
+El agujero más serio lo tenés entre RF-03 y AC-03. RF-03 dice que completás medidas de objetos "de uso común", y AC-03 dice que si no lo reconoce, pregunta y no inventa. ¿Y quién decide qué reconoce? Si es el modelo, AC-03 no es testeable, porque el modelo siempre te va a decir que lo reconoce y te va a tirar un número con toda confianza. Eso no lo arreglás con un prompt. Armate un catálogo de objetos conocidos versionado en el repo, y todo lo que no esté ahí se pregunta. Recién ahí AC-03 da verdadero o falso.
+
+El resto, más corto:
+
+* RNF-05 es autorreferencial: la línea base todavía no existe. Decí que se registra en la primera iteración y dónde queda guardada, si no es un RNF que no podés medir hasta que ya sea tarde.
+
+* Te faltan AC para RF-04, RF-05 y RF-07. El de RF-04 importa porque es donde el usuario corrige lo que el modelo estimó, o sea tu red de seguridad. Y el de RF-07 se escribe solo: misma entrada dos veces, misma disposición, idéntica. Si eso no lo verificás, "determinístico" es una declaración de intenciones.
+
+* RF-08 nombra la carga máxima del contenedor pero ningún AC la verifica. AC-06 cubre el peso encima de un bulto, no el total. Y no hay nada de distribución de peso ni centro de gravedad, que en un contenedor real es lo que te rebota en el puerto. Si lo dejás afuera, dejalo afuera por escrito.
+
+* El dataset de 50 descripciones y los 10 escenarios los tenés como dependencia al final, y en realidad son tu primer entregable. Sin eso, RNF-02 y RNF-05 son decorativos. Armalos antes que el 3D. Y aclará si un campo marcado como estimado cuenta como correcto para el 90%, porque cambia el número.
+
+* Dependés de DeepSeek. Metelo detrás de una interfaz chica para poder cambiar de proveedor sin tocar el resto, que en el curso vas a estar con otros modelos y no querés reescribir por eso.
+
+Sobre stack: yo me quedaría todo en TypeScript, React con Vite y Three.js para el 3D, y el packing escrito a mano ahí mismo con un heurístico de capas. Meter Python en el medio te parte el proyecto en dos runtimes y no te compra nada acá.
+
+Te resumo: mandá el Tetris al final de la fila, cerrá el catálogo de objetos conocidos para que AC-03 sea verificable, sumá los AC que faltan (sobre todo el de determinismo) y armá el dataset antes que cualquier otra cosa. Tenés un proyecto muy bueno entre manos, cuidalo de vos mismo.
+
+Cualquier cosa escribime. Abrazo!
+
+================================================================================
+RESPUESTA A LA DEVOLUCIÓN — Andrés
+================================================================================
+
+Gracias por la devolución, y sobre todo gracias por apretar: es la primera vez que
+alguien me marca el PRD por dónde se rompe y no por cómo está redactado.
+
+Te contesto ordenado: primero lo que tomo sin discutir, después cuatro cosas que no
+te mandé y que cambian algo del diagnóstico, y al final la única que te quiero
+discutir.
+
+
+--------------------------------------------------------------------------------
+LO QUE TOMO TAL CUAL
+--------------------------------------------------------------------------------
+
+1) El catálogo de objetos conocidos.
+
+Este es el que más ruido me hizo, en el buen sentido. Tenés razón en lo técnico y no
+lo había visto: si el que decide "esto lo reconozco" es el modelo, AC-03 nunca puede
+dar falso, porque el modelo siempre reconoce y siempre te contesta un número con cara
+de seguridad. No es un problema de prompt: es que el criterio no existía fuera del
+modelo.
+
+Va un catálogo versionado en el repo, con medidas, peso y fuente por entrada. RF-03
+pasa a decir "completa a partir del catálogo; lo que no está, se pregunta", y AC-03
+queda binario. De paso me resuelve otro pendiente que tenía suelto: las medidas
+internas y las cargas máximas de los contenedores, que hoy en el prototipo son
+aproximadas y sin fuente, entran con el mismo mecanismo.
+
+Una cosa que me quedó dando vueltas y que voy a escribir explícita: el matcheo de la
+frase del usuario contra la entrada del catálogo sigue siendo difuso ("tambor de 200
+litros" contra "tambor"), así que la interfaz tiene que mostrar qué entrada del
+catálogo usó, no solamente el número que sacó de ahí.
+
+2) Los AC que faltan.
+
+Los sumo, incluido el de determinismo. Ese lo había dejado afuera con el argumento de
+que el ejemplo de la cursada tampoco cubría todos los RF — argumento que se cae solo
+cuando el que corrige te dice que no alcanza. Y encima es el más barato de todos:
+misma entrada dos veces, misma disposición, comparada bulto por bulto sobre los diez
+escenarios en CI. Sin eso, el gate de RNF-05 no puede distinguir una regresión real
+del ruido.
+
+El de RF-04 lo escribo como me lo marcaste, como red de seguridad: editar un campo
+estimado lo convierte en declarado, le saca la marca y recalcula.
+
+3) RNF-05 y dónde vive la línea base.
+
+Tenés razón, quedó a mitad de camino. Ya lo había convertido de número absoluto a
+gate de regresión, pero nunca dije dónde se registra ni cuándo, así que hoy es
+inmedible. Queda versionada en el repo y se registra atada a un evento, no a una
+fecha (en el PRD no pongo cronogramas a propósito).
+
+4) El dataset primero, y la pregunta del 90%.
+
+Lo muevo al frente de la fila. Y la pregunta de si un campo estimado cuenta como
+correcto es la más filosa de toda la devolución, porque no tenía respuesta. En lugar
+de contestar sí o no, parto la métrica en dos:
+
+  - campos declarados en la descripción y extraídos bien: >= 90%
+  - campos ausentes marcados como estimado: 100%, binario
+
+Así un valor mal estimado no se puede esconder adentro del 90%, y un campo que
+debería haberse preguntado (porque no está en el catálogo) pero se estimó cuenta como
+error y no como acierto. Es el mismo razonamiento por el que RNF-05 había dejado de
+ser un porcentaje absoluto: si una métrica mezcla dos cosas, el número no significa
+nada.
+
+5) La interfaz para el proveedor de modelo.
+
+Va. DeepSeek queda como la implementación inicial detrás de una interfaz propia, no
+como dependencia atravesada en todo el código.
+
+6) El peso total y el centro de gravedad.
+
+El AC de carga máxima total faltaba de verdad: RF-08 la nombra y ningún AC la
+verificaba, AC-06 cubre el peso encima de un bulto y nada más. Lo sumo, y también que
+lo que queda afuera por peso se liste con motivo, igual que lo que queda afuera por
+volumen.
+
+El centro de gravedad lo dejo afuera por escrito, como me decís. El motivo es
+concreto: meter una restricción de CG obliga a tocar el acomodador, que ya está
+congelado y con línea base, así que no es un agregado, es reabrir el motor. Estoy
+evaluando un punto medio barato —informar el CG longitudinal sin restringir nada— que
+no toca el heurístico. Si te parece que eso ensucia más de lo que aporta, decime y lo
+dejo afuera del todo.
+
+
+--------------------------------------------------------------------------------
+CUATRO COSAS QUE NO TE MANDÉ
+--------------------------------------------------------------------------------
+
+Estas no te las mando para defenderme del recorte, sino porque creo que cambian algo
+del cálculo.
+
+1) El bin packing ya está hecho y medido.
+
+Hice un spike antes de mandarte el PRD y no lo adjunté, error mío. Los números:
+acomodador de ~200 líneas, validador de ~100, JavaScript sin dependencias. 267 ms en
+el peor escenario contra los 5000 ms que admite RNF-04. El validador probado con diez
+casos armados a mano, cada uno aislando una regla, todos rechazados por el motivo
+correcto, incluida la carga que se propaga hacia abajo a través de una pila. Cero
+violaciones en treinta corridas sobre escenarios reales.
+
+También descarté las librerías con evidencia: todas resuelven geometría pura, ninguna
+modela gravedad, apoyo debajo, apilabilidad, frágiles ni orientación obligatoria por
+ítem, que es justo el diferencial. La más citada en Python está abandonada y la seria
+de verdad es Java.
+
+El hallazgo que más me sirvió: pesa más el orden de colocación que el algoritmo. Poner
+los no apilables al final en vez de por volumen llevó el promedio de carga mixta de
+69,2% a 82,3%, y un escenario de tambores y cajas de 45,1% a 91,0%. La razón es
+física: los no apilables puestos primero tapizan el piso y después nada puede apoyarse
+encima.
+
+O sea que de los tres proyectos que ves adentro, el que marcás como el que se puede
+comer el cuatrimestre es el que ya está cerrado y congelado.
+
+2) Dos de los diez escenarios están mal diseñados.
+
+Lo sabía y no lo dije: el de frágiles no tiene carga suficiente para llenar el
+contenedor y el de pallets está topeado por geometría. Los rehago antes de registrar
+la línea base, porque si no congelo un número que no mide nada. Refuerza tu punto de
+armar el dataset y los escenarios antes que cualquier otra cosa.
+
+3) RNF-06 sobrevivió entero a tu recorte y creo que es el riesgo que queda.
+
+Treinta fps con trescientos bultos en el visor 3D. Después de mandar el Tetris al
+final, el visor pasa a ser la parte más incierta del proyecto, y ese número es el que
+me puede morder. No lo mencionaste; lo dejo anotado por si querés apuntarme ahí en la
+próxima.
+
+4) El stack que proponés no cierra con RNF-07.
+
+De acuerdo con TypeScript, React con Vite y Three.js, y con escribir el packing a mano
+ahí mismo: el prototipo ya es JavaScript sin dependencias, así que pasarlo a TS es
+tipar, no reescribir. Python nunca estuvo en los planes.
+
+Pero tal como está planteado es todo navegador, y una app puramente de navegador no
+puede cumplir RNF-07: la API key queda expuesta del lado del cliente. Necesito una
+pieza mínima de servidor, aunque sea una función serverless haciendo de proxy. Lo
+tenía anotado como pendiente y lo cierro así, salvo que veas otra forma.
+
+
+--------------------------------------------------------------------------------
+LO ÚNICO QUE TE DISCUTO
+--------------------------------------------------------------------------------
+
+RF-11 se va al final, de acuerdo: tipografía de píxeles, caída animada y recuadro NEXT
+no tienen que existir hasta que exista todo lo demás.
+
+Pero de los dos AC que se lleva, AC-09 —un color fijo por tipo de ítem, tomado de la
+paleta de los siete tetrominós— no es estética, es legibilidad. Sin eso mirás un
+contenedor lleno de cajas grises y no distinguís un ítem de otro, que es justamente lo
+que la vista 3D tiene que resolver. Ese lo paso a RF-10 y lo dejo adentro. AC-10, el
+del NEXT, se va con el resto.
+
+Es un cambio chico, pero prefiero avisarte que lo hago y por qué, en vez de que
+parezca que el Tetris se me coló de nuevo por la ventana.
+
+
+--------------------------------------------------------------------------------
+ORDEN EN EL QUE VOY
+--------------------------------------------------------------------------------
+
+  1. Rehacer los dos escenarios rotos y armar el dataset de 50 descripciones.
+  2. Cerrar el catálogo de objetos conocidos y reescribir RF-03 y AC-03.
+  3. Sumar los AC faltantes (determinismo, edición, contenedor, peso total) y dejar
+     el centro de gravedad afuera por escrito.
+  4. Registrar la línea base de RNF-05 y congelar.
+  5. El 3D.
+  6. El Tetris, si sobra.
+
+Gracias de nuevo. Te mando el PRD-001v2 con todo esto aplicado.
+
+Abrazo!
